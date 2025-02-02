@@ -1,6 +1,9 @@
 package main
 
-import "github.com/veandco/go-sdl2/sdl"
+import (
+	"fmt"
+	"github.com/veandco/go-sdl2/sdl"
+)
 
 const (
 	TITLE     = "README"
@@ -16,33 +19,41 @@ var (
 )
 
 func main() {
-	if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
-		panic(err)
-	}
-	defer sdl.Quit()
+	e := initEmu()
+	fmt.Println(e)
 
-	window, err := sdl.CreateWindow(TITLE, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, sdl.WINDOW_SHOWN)
-	if err != nil {
-		panic(err)
-	}
-	defer window.Destroy()
+	// / wait
 
-	surface, err := window.GetSurface()
-	if err != nil {
-		panic(err)
-	}
+	e.reset()
+	fmt.Println(e)
 
-	for running {
-		for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
-			handleEvent(event)
-		}
-
-		loopTime := loop(surface)
-		window.UpdateSurface()
-
-		delay := (1000 / FRAMERATE) - loopTime
-		sdl.Delay(delay)
-	}
+	// if err := sdl.Init(sdl.INIT_EVERYTHING); err != nil {
+	// 	panic(err)
+	// }
+	// defer sdl.Quit()
+	//
+	// window, err := sdl.CreateWindow(TITLE, sdl.WINDOWPOS_UNDEFINED, sdl.WINDOWPOS_UNDEFINED, WIDTH, HEIGHT, sdl.WINDOW_SHOWN)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer window.Destroy()
+	//
+	// surface, err := window.GetSurface()
+	// if err != nil {
+	// 	panic(err)
+	// }
+	//
+	// for running {
+	// 	for event := sdl.PollEvent(); event != nil; event = sdl.PollEvent() {
+	// 		handleEvent(event)
+	// 	}
+	//
+	// 	loopTime := loop(surface)
+	// 	window.UpdateSurface()
+	//
+	// 	delay := (1000 / FRAMERATE) - loopTime
+	// 	sdl.Delay(delay)
+	// }
 }
 
 func handleEvent(event sdl.Event) {
