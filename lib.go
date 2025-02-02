@@ -81,14 +81,66 @@ func (e *Emu) reset() {
 
 func (e *Emu) tick() {
 	var op = e.fetch()
-	// decode
-	// execute
+	e.execute(op)
+}
+
+func (e *Emu) execute(op uint16) {
+	var d1 = (op & 0xF000) >> 12
+	var d2 = (op & 0x0F00) >> 8
+	var d3 = (op & 0x00F0) >> 4
+	var d4 = (op & 0x000F)
+
+	var digits = [4]uint16{d1, d2, d3, d4}
+	switch {
+	// noop
+	case digits == [4]uint16{0, 0, 0, 0}:
+		return
+	// clear screen
+	case digits == [4]uint16{0, 0, 0xE, 0}:
+		e.screen = [SCREEN_HEIGHT * SCREEN_WIDTH]bool{false}
+	// return from subroutine
+	case digits == [4]uint16{0, 0, 0xE, 0xE}:
+		var ret_add = e.pop()
+		e.pc = ret_add
+	// jump
+	case digits[0] == 1:
+		var nnn = op & 0xFFF
+		e.pc = nnn
+	// call subroutine
+	case digits[0] == 2:
+		var nnn = op & 0xFFF
+		e.push(e.pc)
+		e.pc = nnn
+	// skip
+	case digits[0] == 3:
+		var x = d2
+		var nn = uint8(op & 0xFF)
+		if e.v_reg[x] == nn {
+			e.pc += 2
+		}
+	default:
+		panic("omg!")
+	}
 }
 
 func (e *Emu) fetch() uint16 {
 	var high_byte = uint16(e.ram[e.pc])
 	var low_byte = uint16(e.ram[e.pc+1])
+	// Big Endian
 	var op = (high_byte << 8) | low_byte
 	e.pc += 2
 	return op
+}
+
+func (e *Emu) tick_timer() {
+	if e.dt > 1 {
+		e.dt -= 1
+	}
+
+	if e.st > 0 {
+		if e.st == 1 {
+			// TODO: implement beep
+		}
+		e.st -= 1
+	}
 }
