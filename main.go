@@ -59,10 +59,15 @@ func main() {
 				running = false
 			case *sdl.KeyboardEvent:
 				if e.Type == sdl.KEYDOWN {
-					switch e.Keysym.Sym {
-					case sdl.K_ESCAPE:
-						running = false
-					}
+					fmt.Println("in keydown")
+					k := key_to_button(e.Keysym.Sym)
+					fmt.Println(k)
+					emu.keypress(uint(k), true)
+				} else if e.Type == sdl.KEYUP {
+					fmt.Println("in keyup")
+					k := key_to_button(e.Keysym.Sym)
+					fmt.Println(k)
+					emu.keypress(uint(k), false)
 				}
 			}
 		}
@@ -100,6 +105,41 @@ func draw_screen(emu *Emu, renderer *sdl.Renderer) {
 	renderer.Present()
 }
 
-func key_to_button(key sdl.Keycode) {
-
+func key_to_button(key sdl.Keycode) uint16 {
+	switch key {
+	case sdl.K_1:
+		return 0x1
+	case sdl.K_2:
+		return 0x2
+	case sdl.K_3:
+		return 0x3
+	case sdl.K_4:
+		return 0xC
+	case sdl.K_q:
+		return 0x4
+	case sdl.K_w:
+		return 0x5
+	case sdl.K_e:
+		return 0x6
+	case sdl.K_r:
+		return 0xD
+	case sdl.K_a:
+		return 0x7
+	case sdl.K_s:
+		return 0x8
+	case sdl.K_d:
+		return 0x9
+	case sdl.K_f:
+		return 0xE
+	case sdl.K_z:
+		return 0xA
+	case sdl.K_x:
+		return 0x0
+	case sdl.K_c:
+		return 0xB
+	case sdl.K_v:
+		return 0xF
+	default:
+		return 0xFF
+	}
 }
