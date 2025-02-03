@@ -1,7 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"github.com/veandco/go-sdl2/sdl"
+	"os"
 )
 
 const (
@@ -11,9 +13,22 @@ const (
 	FRAMERATE = 60
 )
 
+const SCALE = 10
+
 var running = true
 
 func main() {
+	emu := initEmu()
+
+	filename := os.Args[1]
+	dat, err := os.ReadFile(filename)
+	if err != nil {
+		panic(err)
+	}
+
+	emu.load(dat)
+	fmt.Print("data loaded into emulator")
+
 	if err := sdl.Init(sdl.INIT_VIDEO); err != nil {
 		panic(err)
 	}
@@ -51,13 +66,32 @@ func main() {
 			}
 		}
 
-		// Handle game logic (e.g., player movement, drawing objects, etc.)
-		// Clear screen to black again for the next frame
-		renderer.SetDrawColor(0, 0, 0, 255)
-		renderer.Clear()
-
-		renderer.Present()
+		emu.tick()
+		draw_screen(emu, renderer)
 
 		sdl.Delay(1000 / FRAMERATE)
 	}
+}
+
+func draw_screen(emu *Emu, renderer *sdl.Renderer) {
+	// Handle game logic (e.g., player movement, drawing objects, etc.)
+	// Clear screen to black again for the next frame
+	renderer.SetDrawColor(0, 0, 0, 255)
+	renderer.Clear()
+
+	var screen_buf = emu.get_display()
+	renderer.SetDrawColor(255, 255, 255, 255)
+	for i, pixel := range screen_buf {
+		if pixel {
+			x := uint32(uint(i) % SCREEN_WIDTH)
+			y := uint32(uint(i) / SCREEN_WIDTH)
+			rect := sdl.Rect{int32(x * SCALE), int32(y * SCALE), SCALE, SCALE}
+			err := renderer.FillRect(&rect)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	renderer.Present()
 }

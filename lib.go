@@ -50,8 +50,8 @@ type Emu struct {
 
 const START_ADDR uint16 = 0x200
 
-func initEmu() Emu {
-	e := Emu{
+func initEmu() *Emu {
+	e := &Emu{
 		pc: START_ADDR,
 	}
 	// i dono how this following like works
