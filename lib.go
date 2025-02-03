@@ -290,7 +290,14 @@ func (e *Emu) execute(op uint16) {
 	case digits[0] == 0xF && digits[2] == 1 && digits[3] == 8:
 		var x = d2
 		e.st = e.v_reg[x]
-
+	case digits[0] == 0xF && digits[2] == 1 && digits[3] == 0xE:
+		var x = d2
+		var vx = uint16(e.v_reg[x])
+		e.i_reg = (e.i_reg + vx) & 0xFFFF
+	case digits[0] == 0xF && digits[2] == 2 && digits[3] == 9:
+		var x = d2
+		var c = uint16(e.v_reg[x])
+		e.i_reg = c * 5
 	default:
 		panic("omg!")
 	}
