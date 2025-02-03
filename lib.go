@@ -1,6 +1,7 @@
 package main
 
 import (
+	"math"
 	"math/bits"
 	"math/rand/v2"
 )
@@ -298,9 +299,51 @@ func (e *Emu) execute(op uint16) {
 		var x = d2
 		var c = uint16(e.v_reg[x])
 		e.i_reg = c * 5
+	case digits[0] == 0xF && digits[2] == 3 && digits[3] == 3:
+		var x = d2
+		var vx = float32(e.v_reg[x])
+		// tricky type cast
+		// TODO: use BCD algorithms
+		var hundreds = uint8(math.Floor(float64(vx / 100.0)))
+		//
+		var tens = uint8(math.Floor(float64(vx)/10.0) * 10.0)
+		//
+		var ones = uint8(vx) % 10.0
+		// update in ram
+		e.ram[e.i_reg] = hundreds
+		e.ram[e.i_reg+1] = tens
+		e.ram[e.i_reg+2] = ones
+	//  Store V0 - VX into I
+	case digits[0] == 0xF && digits[2] == 5 && digits[3] == 5:
+		var x = d2
+		var i = e.i_reg
+		// seems to not correctly implemented
+		for idx := uint16(0); idx < x; idx++ {
+			e.ram[i+idx] = e.v_reg[idx]
+		}
+	case digits[0] == 0xF && digits[2] == 6 && digits[3] == 5:
+		var x = d2
+		var i = e.i_reg
+		for idx := uint16(0); idx < x; idx++ {
+			e.v_reg[idx] = e.ram[i+idx]
+		}
 	default:
 		panic("omg!")
 	}
+}
+
+func (e *Emu) get_display() *[SCREEN_HEIGHT * SCREEN_WIDTH]bool {
+	return &e.screen
+}
+
+func (e *Emu) keypress(idx uint, pressed bool) {
+	e.keys[idx] = pressed
+}
+
+func (e *Emu) load(data []byte) {
+	start := int(START_ADDR)
+	end := start + len(data)
+	copy(e.ram[start:end], data) // TODO: learn more about this function
 }
 
 func (e *Emu) fetch() uint16 {
