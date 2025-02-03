@@ -1,6 +1,9 @@
 package main
 
-import "math/bits"
+import (
+	"math/bits"
+	"math/rand/v2"
+)
 
 const (
 	RAM_SIZE      uint = 4096
@@ -167,6 +170,127 @@ func (e *Emu) execute(op uint16) {
 		}
 		e.v_reg[x] = uint8(newVx)
 		e.v_reg[y] = uint8(newVf)
+	case digits[0] == 8 && digits[3] == 5:
+		var x = d2
+		var y = d3
+		newVx, borrow := bits.Sub(uint(e.v_reg[x]), uint(e.v_reg[y]), 0)
+		var newVf uint
+		if borrow != 0 {
+			newVf = 0
+		} else {
+			newVf = 1
+		}
+		e.v_reg[x] = uint8(newVx)
+		e.v_reg[0xF] = uint8(newVf)
+	case digits[0] == 8 && digits[3] == 6:
+		var x = d2
+		var lsb = e.v_reg[x] & 1
+		e.v_reg[x] >>= 1 // what is this operation doing
+		e.v_reg[0xF] = lsb
+	//  8XY7 - VX = VY - VX
+	case digits[0] == 8 && digits[3] == 7:
+		var x = d2
+		var y = d3
+		newVx, borrow := bits.Sub(uint(e.v_reg[x]), uint(e.v_reg[y]), 0)
+		var newVf uint
+		if borrow != 0 {
+			newVf = 0
+		} else {
+			newVf = 1
+		}
+		e.v_reg[x] = uint8(newVx)
+		e.v_reg[0xF] = uint8(newVf)
+	// Similar to the right shift operation, but we store the value that is overflowed in the flag register
+	case digits[0] == 8 && digits[3] == 0xE:
+		var x = d2
+		var msb = (e.v_reg[x] >> 7) & 1
+		e.v_reg[x] <<= 1
+		e.v_reg[0xF] = msb
+	case digits[0] == 9 && digits[3] == 0:
+		var x = d2
+		var y = d3
+		if e.v_reg[x] != e.v_reg[y] {
+			e.pc += 2
+		}
+	case digits[0] == 0xA:
+		var nnn = op & 0xFFF
+		e.i_reg = nnn
+		// BNNN - Jump to V0 + NNN
+	case digits[0] == 0xB:
+		var nnn = op & 0xFFF
+		e.pc = uint16(e.v_reg[0]) + nnn
+	case digits[0] == 0xC:
+		var x = d2
+		var nn = uint8(op & 0xFF)
+		var rng = uint8(rand.Uint()) // TODO: maybe wrong - can fail
+		e.v_reg[x] = rng & nn
+	// sprite
+	case digits[0] == 0xD:
+		var x_coord = uint16(e.v_reg[d2])
+		var y_coord = uint16(e.v_reg[d3])
+		var num_rows = d4
+		var flipped = false
+		// it seems that int type-case is not correct
+		for y_line := uint16(0); y_line < num_rows; y_line++ {
+			var add = e.i_reg + y_line
+			var pixels = e.ram[add]
+			for x_line := uint16(0); x_line < uint16(8); x_line++ {
+				if (pixels & (0b1000_0000 >> x_line)) != 0 {
+					var x = (x_coord + x_line) % uint16(SCREEN_WIDTH)
+					var y = (y_coord + y_line) % uint16(SCREEN_HEIGHT)
+					//
+					var idx = x + uint16(SCREEN_WIDTH)*y
+					// logical OR - instead of bitwise OR
+					flipped = flipped || e.screen[idx]
+					e.screen[idx] = !e.screen[idx]
+				}
+			}
+		}
+		if flipped {
+			e.v_reg[0xF] = 1
+		} else {
+			e.v_reg[0xF] = 0
+		}
+	case digits[0] == 0xE && digits[2] == 9 && digits[3] == 0xE:
+		var x = d2
+		var vx = e.v_reg[x]
+		var key = e.keys[vx]
+		if key {
+			e.pc += 2
+		}
+	case digits[0] == 0xE && digits[2] == 0xA && digits[3] == 1:
+		var x = d2
+		var vx = e.v_reg[x]
+		var key = e.keys[vx]
+		if !key {
+			e.pc += 2
+		}
+	// Delay Timer
+	case digits[0] == 0xF && digits[2] == 0 && digits[3] == 7:
+		var x = d2
+		e.v_reg[x] = e.dt
+	case digits[0] == 0xF && digits[2] == 0 && digits[3] == 0xA:
+		var x = d2
+		pressed := false
+		for i := 0; i < len(e.keys); i++ {
+			if e.keys[i] {
+				e.v_reg[x] = uint8(i)
+				pressed = true
+				break
+			}
+		}
+		if !pressed {
+			e.pc -= 2
+		}
+	// reset delay timer
+	case digits[0] == 0xF && digits[2] == 1 && digits[3] == 5:
+		var x = d2
+		e.dt = e.v_reg[x]
+	// reset sound timer
+	case digits[0] == 0xF && digits[2] == 1 && digits[3] == 8:
+		var x = d2
+		e.st = e.v_reg[x]
+
 	default:
 		panic("omg!")
 	}
