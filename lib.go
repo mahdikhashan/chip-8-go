@@ -1,5 +1,7 @@
 package main
 
+import "math/bits"
+
 const (
 	RAM_SIZE      uint = 4096
 	SCREEN_HEIGHT uint = 32
@@ -88,7 +90,7 @@ func (e *Emu) execute(op uint16) {
 	var d1 = (op & 0xF000) >> 12
 	var d2 = (op & 0x0F00) >> 8
 	var d3 = (op & 0x00F0) >> 4
-	var d4 = (op & 0x000F)
+	var d4 = op & 0x000F
 
 	var digits = [4]uint16{d1, d2, d3, d4}
 	switch {
@@ -118,6 +120,53 @@ func (e *Emu) execute(op uint16) {
 		if e.v_reg[x] == nn {
 			e.pc += 2
 		}
+	// skip if not equal VX !=Nn
+	case digits[0] == 4:
+		var x = d2
+		var nn = uint8(op & 0xFF)
+		if e.v_reg[x] != nn {
+			e.pc += 2
+		}
+	case digits[0] == 5 && digits[3] == 0:
+		var x = d2
+		var y = d3
+		if e.v_reg[x] == e.v_reg[y] {
+			e.pc += 2
+		}
+	// 6XNN - VX = NN
+	case digits[0] == 6:
+		var x = d2
+		var nn = uint8(op & 0xFF)
+		e.v_reg[x] = nn
+	case digits[0] == 7:
+		var x = d2
+		var nn = uint8(op & 0xFF)
+		// wrt gpt, it can wrap automatically
+		e.v_reg[x] = e.v_reg[x] + nn
+	// 8XY0 - VX = VY
+	case digits[0] == 8 && digits[3] == 0:
+		var x = d2
+		var y = d3
+		e.v_reg[x] = e.v_reg[y]
+	// TODO: 8XY1, 8XY2, 8XY3 - Bitwise operations
+	case digits[0] == 8 && digits[3] == 1:
+		var x = d2
+		var y = d3
+		// bitwise OR
+		e.v_reg[x] |= e.v_reg[y]
+	// 	seems to not correctly implemented
+	case digits[0] == 8 && digits[3] == 4:
+		var x = d2
+		var y = d3
+		newVx, carry := bits.Add(uint(e.v_reg[x]), uint(e.v_reg[y]), 0)
+		var newVf uint
+		if carry != 0 {
+			newVf = 1
+		} else {
+			newVf = 0
+		}
+		e.v_reg[x] = uint8(newVx)
+		e.v_reg[y] = uint8(newVf)
 	default:
 		panic("omg!")
 	}
