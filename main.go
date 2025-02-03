@@ -14,6 +14,7 @@ const (
 )
 
 const SCALE = 10
+const TICKS_PER_FRAME = 10
 
 var running = true
 
@@ -66,7 +67,10 @@ func main() {
 			}
 		}
 
-		emu.tick()
+		for range TICKS_PER_FRAME {
+			emu.tick()
+		}
+		emu.tick_timer()
 		draw_screen(emu, renderer)
 
 		sdl.Delay(1000 / FRAMERATE)
