@@ -89,7 +89,7 @@ func draw_screen(emu *Emu, renderer *sdl.Renderer) {
 		if pixel {
 			x := uint32(uint(i) % SCREEN_WIDTH)
 			y := uint32(uint(i) / SCREEN_WIDTH)
-			rect := sdl.Rect{int32(x * SCALE), int32(y * SCALE), SCALE, SCALE}
+			rect := sdl.Rect{X: int32(x * SCALE), Y: int32(y * SCALE), W: SCALE, H: SCALE}
 			err := renderer.FillRect(&rect)
 			if err != nil {
 				panic(err)
@@ -98,4 +98,8 @@ func draw_screen(emu *Emu, renderer *sdl.Renderer) {
 	}
 
 	renderer.Present()
+}
+
+func key_to_button(key sdl.Keycode) {
+
 }
