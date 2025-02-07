@@ -152,8 +152,18 @@ func (e *Emu) execute(op uint16) {
 		var x = d2
 		var y = d3
 		e.v_reg[x] = e.v_reg[y]
-	// TODO: 8XY1, 8XY2, 8XY3 - Bitwise operations
+	// 8XY1, 8XY2, 8XY3 - Bitwise operations
 	case digits[0] == 8 && digits[3] == 1:
+		var x = d2
+		var y = d3
+		// bitwise OR
+		e.v_reg[x] |= e.v_reg[y]
+	case digits[0] == 8 && digits[3] == 2:
+		var x = d2
+		var y = d3
+		// bitwise OR
+		e.v_reg[x] |= e.v_reg[y]
+	case digits[0] == 8 && digits[3] == 3:
 		var x = d2
 		var y = d3
 		// bitwise OR
