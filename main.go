@@ -2,14 +2,17 @@ package main
 
 import (
 	"fmt"
-	"github.com/veandco/go-sdl2/sdl"
 	"os"
+
+	"runtime"
+
+	"github.com/veandco/go-sdl2/sdl"
 )
 
 const (
 	TITLE     = "CHIP8"
-	WIDTH     = 640
-	HEIGHT    = 480
+	WIDTH     = 64 * SCALE
+	HEIGHT    = 48 * SCALE
 	FRAMERATE = 60
 )
 
@@ -17,6 +20,10 @@ const SCALE = 10
 const TICKS_PER_FRAME = 10
 
 var running = true
+
+func init() {
+	runtime.LockOSThread()
+}
 
 func main() {
 	emu := initEmu()
@@ -58,15 +65,25 @@ func main() {
 			case *sdl.QuitEvent:
 				running = false
 			case *sdl.KeyboardEvent:
+				k := key_to_button(e.Keysym.Sym)
+
+				if k == 0xFF {
+					continue
+				}
+
+				if e.Repeat > 0 {
+					continue
+				}
+
 				if e.Type == sdl.KEYDOWN {
-					fmt.Println("in keydown")
-					k := key_to_button(e.Keysym.Sym)
-					fmt.Println(k)
+					// fmt.Println("in keydown")
+					// k := key_to_button(e.Keysym.Sym)
+					// fmt.Println(k)
 					emu.keypress(uint(k), true)
 				} else if e.Type == sdl.KEYUP {
-					fmt.Println("in keyup")
-					k := key_to_button(e.Keysym.Sym)
-					fmt.Println(k)
+					// fmt.Println("in keyup")
+					// k := key_to_button(e.Keysym.Sym)
+					// fmt.Println(k)
 					emu.keypress(uint(k), false)
 				}
 			}
@@ -78,7 +95,7 @@ func main() {
 		emu.tick_timer()
 		draw_screen(emu, renderer)
 
-		sdl.Delay(1000 / FRAMERATE)
+		sdl.Delay(750 / FRAMERATE)
 	}
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"math"
 	"math/bits"
 	"math/rand/v2"
 )
@@ -162,12 +161,12 @@ func (e *Emu) execute(op uint16) {
 		var x = d2
 		var y = d3
 		// bitwise OR
-		e.v_reg[x] |= e.v_reg[y]
+		e.v_reg[x] &= e.v_reg[y]
 	case digits[0] == 8 && digits[3] == 3:
 		var x = d2
 		var y = d3
 		// bitwise OR
-		e.v_reg[x] |= e.v_reg[y]
+		e.v_reg[x] ^= e.v_reg[y]
 	// 	seems to not correctly implemented
 	case digits[0] == 8 && digits[3] == 4:
 		var x = d2
@@ -184,7 +183,7 @@ func (e *Emu) execute(op uint16) {
 	case digits[0] == 8 && digits[3] == 5:
 		var x = d2
 		var y = d3
-		newVx, borrow := bits.Sub(uint(e.v_reg[x]), uint(e.v_reg[y]), 0)
+		newVx, borrow := bits.Sub(uint(e.v_reg[y]), uint(e.v_reg[x]), 0)
 		var newVf uint
 		if borrow != 0 {
 			newVf = 0
@@ -202,7 +201,7 @@ func (e *Emu) execute(op uint16) {
 	case digits[0] == 8 && digits[3] == 7:
 		var x = d2
 		var y = d3
-		newVx, borrow := bits.Sub(uint(e.v_reg[x]), uint(e.v_reg[y]), 0)
+		newVx, borrow := bits.Sub(uint(e.v_reg[y]), uint(e.v_reg[x]), 0)
 		var newVf uint
 		if borrow != 0 {
 			newVf = 0
@@ -311,30 +310,25 @@ func (e *Emu) execute(op uint16) {
 		e.i_reg = c * 5
 	case digits[0] == 0xF && digits[2] == 3 && digits[3] == 3:
 		var x = d2
-		var vx = float32(e.v_reg[x])
+		var vx = e.v_reg[x]
 		// tricky type cast
 		// TODO: use BCD algorithms
-		var hundreds = uint8(math.Floor(float64(vx / 100.0)))
-		//
-		var tens = uint8(math.Floor(float64(vx)/10.0) * 10.0)
-		//
-		var ones = uint8(vx) % 10.0
 		// update in ram
-		e.ram[e.i_reg] = hundreds
-		e.ram[e.i_reg+1] = tens
-		e.ram[e.i_reg+2] = ones
+		e.ram[e.i_reg] = vx / 100
+		e.ram[e.i_reg+1] = (vx / 10) % 10
+		e.ram[e.i_reg+2] = vx % 10
 	//  Store V0 - VX into I
 	case digits[0] == 0xF && digits[2] == 5 && digits[3] == 5:
 		var x = d2
 		var i = e.i_reg
 		// seems to not correctly implemented
-		for idx := uint16(0); idx < x; idx++ {
+		for idx := uint16(0); idx <= x; idx++ {
 			e.ram[i+idx] = e.v_reg[idx]
 		}
 	case digits[0] == 0xF && digits[2] == 6 && digits[3] == 5:
 		var x = d2
 		var i = e.i_reg
-		for idx := uint16(0); idx < x; idx++ {
+		for idx := uint16(0); idx <= x; idx++ {
 			e.v_reg[idx] = e.ram[i+idx]
 		}
 	default:
@@ -366,7 +360,7 @@ func (e *Emu) fetch() uint16 {
 }
 
 func (e *Emu) tick_timer() {
-	if e.dt > 1 {
+	if e.dt > 0 {
 		e.dt -= 1
 	}
 
