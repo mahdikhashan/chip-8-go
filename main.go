@@ -12,7 +12,7 @@ import (
 const (
 	TITLE     = "CHIP8"
 	WIDTH     = 64 * SCALE
-	HEIGHT    = 48 * SCALE
+	HEIGHT    = 32 * SCALE
 	FRAMERATE = 60
 )
 

@@ -179,11 +179,11 @@ func (e *Emu) execute(op uint16) {
 			newVf = 0
 		}
 		e.v_reg[x] = uint8(newVx)
-		e.v_reg[y] = uint8(newVf)
+		e.v_reg[0xF] = uint8(newVf)
 	case digits[0] == 8 && digits[3] == 5:
 		var x = d2
 		var y = d3
-		newVx, borrow := bits.Sub(uint(e.v_reg[y]), uint(e.v_reg[x]), 0)
+		newVx, borrow := bits.Sub(uint(e.v_reg[x]), uint(e.v_reg[y]), 0)
 		var newVf uint
 		if borrow != 0 {
 			newVf = 0
